@@ -16,10 +16,9 @@
 
 package mirroring.builders
 
-import org.apache.spark.sql.{DataFrame, Encoders}
+import org.apache.spark.sql.{DataFrame, Dataset, Encoders}
 import wvlet.log.LogSupport
 import mirroring.Config
-import scala.collection.mutable
 
 object FilterBuilder extends LogSupport {
 
@@ -40,24 +39,39 @@ object FilterBuilder extends LogSupport {
       sourceColPrefix: String = "",
       targetColPrefix: String = ""
   ): String = {
-    val conditions: mutable.ArrayBuilder[String] = Array.newBuilder[String]
-    lazy val partitionFilter =
-      FilterBuilder.buildReplaceWherePredicate(ds, partitionCol, "")
-    if (partitionCol.nonEmpty && partitionFilter.nonEmpty) {
-      conditions += partitionFilter.replace(
-        partitionCol,
-        s"${Config.TargetAlias}.$partitionCol"
-      )
-    }
-    conditions += primaryKey
+
+    val maybePartitionColumn = if (partitionCol.isEmpty) None else Some(partitionCol)
+
+    val condition = List(
+      getFilterCondition(ds, maybePartitionColumn),
+      Some(getPrimaryKeyCondition(primaryKey, sourceColPrefix, targetColPrefix))
+    ).flatten
+      .mkString(" and ")
+
+    logger.info(s"Data will be merged using next condition: $condition")
+    condition
+  }
+
+  private def getPrimaryKeyCondition(
+      primaryKey: Array[String],
+      sourceColPrefix: String,
+      targetColPrefix: String
+  ): String = {
+    primaryKey
       .map(colName =>
         s"${Config.SourceAlias}.$sourceColPrefix${colName.trim} = ${Config.TargetAlias}.$targetColPrefix${colName.trim}"
       )
       .mkString(" and ")
-    val condition =
-      conditions.result.filter(x => x.nonEmpty).reduce(_ + " and " + _)
-    logger.info(s"Data will be merged using next condition: $condition")
-    condition
+  }
+
+  private def getFilterCondition(
+      ds: DataFrame,
+      maybePartitionColumn: Option[String]
+  ): Option[String] = {
+    maybePartitionColumn.flatMap { partitionCol =>
+      buildReplaceWherePredicate(ds, partitionCol)
+        .map(_.replace(partitionCol, s"${Config.TargetAlias}.$partitionCol"))
+    }
   }
 
   def buildStrWithoutSpecChars(
@@ -70,43 +84,46 @@ object FilterBuilder extends LogSupport {
   def buildReplaceWherePredicate(
       ds: DataFrame,
       partitionCol: String,
-      whereClause: String
-  ): String = {
+      whereClause: Option[String] = None
+  ): Option[String] = {
     if (ds != null && partitionCol.nonEmpty) {
-      val replaceWhere = new mutable.StringBuilder(s"$whereClause")
-      if (whereClause.nonEmpty) {
-        replaceWhere.append(" AND ")
-      }
+      val replaceWhere: StringBuilder = getWhereStatementBuilder(whereClause)
 
-      val values = ds
+      val partitionColumnDS = ds
         .select(partitionCol)
         .distinct
         .as[String](Encoders.STRING)
         .filter(x => !x.toLowerCase.contains("null"))
-        .cache()
 
-      if (!values.isEmpty) {
+      if (!partitionColumnDS.isEmpty) {
         replaceWhere.append(s"$partitionCol in (")
-        replaceWhere.append(
-          values
-            .map(partition =>
-              if (
-                !partition
-                  .forall(_.isDigit) && partition != "true" && partition != "false"
-              ) {
-                s"'$partition'"
-              } else {
-                partition
-              }
-            )(Encoders.STRING)
-            .reduce(_ + ", " + _)
-        )
+        replaceWhere.append(getWhereClauseValues(partitionColumnDS))
         replaceWhere.append(")")
       }
-      replaceWhere.toString
+      Option(replaceWhere.toString)
     } else {
-      whereClause
+      None
     }
   }
 
+  private def getWhereClauseValues(values: Dataset[String]): String = {
+    values
+      .map((partition: String) =>
+        if (
+          !partition
+            .forall(_.isDigit) && partition != "true" && partition != "false"
+        ) {
+          s"'$partition'"
+        } else {
+          partition
+        }
+      )(Encoders.STRING)
+      .reduce(_ + ", " + _)
+  }
+
+  private def getWhereStatementBuilder(whereClause: Option[String]) = {
+    whereClause
+      .map(clause => new StringBuilder(s"$clause AND "))
+      .getOrElse(new StringBuilder())
+  }
 }

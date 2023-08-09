@@ -17,6 +17,7 @@
 package mirroring.services.writer
 
 import mirroring.builders.FilterBuilder
+import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.{DataFrame, DataFrameWriter, Row}
 import wvlet.log.LogSupport
 
@@ -29,24 +30,27 @@ class DeltaService(context: WriterContext) extends LogSupport {
   }
 
   def dfWriter(data: DataFrame): DataFrameWriter[Row] = {
+
     var writer = data.write
       .mode(context.mode)
       .format("delta")
       .option("mergeSchema", "true")
       .option("userMetadata", context.ctCurrentVersion)
 
+    val whereClause = if (StringUtils.isBlank(context.whereClause)) None else Some(context.whereClause)
     val replaceWhere = FilterBuilder.buildReplaceWherePredicate(
       data,
       context.lastPartitionCol,
-      context.whereClause
+      whereClause
     )
-    if (replaceWhere.nonEmpty && context.mode == "overwrite") {
-      logger.info(
-        s"Data matching next condition will be replaced: $replaceWhere"
-      )
-      writer = writer
-        .option("replaceWhere", replaceWhere)
+    if (context.mode == "overwrite") {
+      logger.info(s"Data matching next condition will be replaced: $replaceWhere")
+      replaceWhere
+        .foreach { where =>
+          writer = writer.option("replaceWhere", where)
+        }
     }
+
     if (context.partitionCols.nonEmpty) {
       logger.info("Saving data with partition")
       writer = writer

@@ -27,8 +27,8 @@ object Runner extends LogSupport {
 
   def initConfig(args: Array[String]): Config = {
 
-    for ( x <- args ) {
-         logger.info(s"Parameter: ${x}")
+    for (x <- args) {
+      logger.info(s"Parameter: ${x}")
     }
 
     //logger.info(s"Parameters parsed: ${args}")
@@ -51,29 +51,29 @@ object Runner extends LogSupport {
     logger.info("Starting mirroring-lib...")
     val config: Config = initConfig(args)
     setSparkContext(config)
-    val jdbcContext                                  = config.getJdbcContext
-    val writerContext: WriterContext                 = config.getWriterContext
-    var query: String                                = config.query
+    val jdbcContext                  = config.getJdbcContext
+    val writerContext: WriterContext = config.getWriterContext
+    val query: String                = config.query
 
-    var jdbcService: JdbcService = new JdbcService(jdbcContext)
+    val jdbcService: JdbcService = new JdbcService(jdbcContext)
 
     val jdbcDF: DataFrame = jdbcService.loadData(query)
-    val ds                = DataframeBuilder.buildDataFrame(jdbcDF, config.getDataframeBuilderContext).cache()
+    val ds                = DataframeBuilder.buildDataFrame(jdbcDF, config.getDataframeBuilderContext)
     jdbcDF.unpersist()
 
-    var writerService: DeltaService = new DeltaService(writerContext)
+    val writerService: DeltaService = new DeltaService(writerContext)
     writerService.write(data = ds)
     deltaPostProcessing(config, ds)
   }
 
-  def deltaPostProcessing(config: Config, ds: DataFrame): Unit = {
+  private def deltaPostProcessing(config: Config, ds: DataFrame): Unit = {
     if (config.zorderby_col.nonEmpty) {
       val replaceWhere =
         FilterBuilder.buildReplaceWherePredicate(
           ds,
-          config.lastPartitionCol,
-          ""
-        )
+          config.lastPartitionCol
+        ).getOrElse("1=1")
+
       DeltaTableService.executeZOrdering(
         config.pathToSave,
         config.zorderby_col,
