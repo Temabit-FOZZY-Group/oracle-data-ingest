@@ -18,6 +18,7 @@ package mirroring.services.databases
 
 import org.apache.spark.sql.{DataFrame, DataFrameReader, Encoders}
 import mirroring.DatatypeMapping
+import mirroring.config.JdbcContext
 import mirroring.services.SparkService.spark
 import wvlet.log.LogSupport
 
@@ -34,9 +35,12 @@ class JdbcService(jdbcContext: JdbcContext) extends LogSupport {
 
     val jdbcDF = getSparkReader
       .option("dbtable", query)
+      .option("fetchsize", jdbcContext.fetchSize)
       .load()
+      .repartition(4)
+      .cache()
 
-    logger.info(s"Number of incoming rows: ${jdbcDF.count}")
+//    logger.info(s"Number of incoming rows: ${jdbcDF.count}")
 
     jdbcDF
   }

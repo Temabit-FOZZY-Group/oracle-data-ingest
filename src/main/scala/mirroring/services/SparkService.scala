@@ -30,6 +30,8 @@ object SparkService {
     )
     .config("spark.sql.parquet.int96RebaseModeInWrite", "LEGACY")
     .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+    .config("log4j.logger.org.apache.spark.sql.execution", "DEBUG")
+    .config("log4j.logger.org.apache.spark.sql.jdbc", "DEBUG")
     .enableHiveSupport()
     .getOrCreate()
 

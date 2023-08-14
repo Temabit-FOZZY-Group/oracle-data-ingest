@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package mirroring.builders
+package mirroring.services.builders
 
-import org.apache.spark.sql.{DataFrame, Dataset, Encoders}
+import mirroring.config.ApplicationConfig
+import org.apache.spark.sql.{DataFrame, Dataset, Encoders, Row}
 import wvlet.log.LogSupport
-import mirroring.Config
 
 object FilterBuilder extends LogSupport {
 
@@ -59,7 +59,7 @@ object FilterBuilder extends LogSupport {
   ): String = {
     primaryKey
       .map(colName =>
-        s"${Config.SourceAlias}.$sourceColPrefix${colName.trim} = ${Config.TargetAlias}.$targetColPrefix${colName.trim}"
+        s"${ApplicationConfig.SourceAlias}.$sourceColPrefix${colName.trim} = ${ApplicationConfig.TargetAlias}.$targetColPrefix${colName.trim}"
       )
       .mkString(" and ")
   }
@@ -70,7 +70,7 @@ object FilterBuilder extends LogSupport {
   ): Option[String] = {
     maybePartitionColumn.flatMap { partitionCol =>
       buildReplaceWherePredicate(ds, partitionCol)
-        .map(_.replace(partitionCol, s"${Config.TargetAlias}.$partitionCol"))
+        .map(_.replace(partitionCol, s"${ApplicationConfig.TargetAlias}.$partitionCol"))
     }
   }
 
@@ -92,8 +92,8 @@ object FilterBuilder extends LogSupport {
       val partitionColumnDS = ds
         .select(partitionCol)
         .distinct
+        .na.drop()
         .as[String](Encoders.STRING)
-        .filter(x => !x.toLowerCase.contains("null"))
 
       if (!partitionColumnDS.isEmpty) {
         replaceWhere.append(s"$partitionCol in (")
@@ -107,7 +107,8 @@ object FilterBuilder extends LogSupport {
   }
 
   private def getWhereClauseValues(values: Dataset[String]): String = {
-    values
+
+    val ds = values
       .map((partition: String) =>
         if (
           !partition
@@ -118,7 +119,8 @@ object FilterBuilder extends LogSupport {
           partition
         }
       )(Encoders.STRING)
-      .reduce(_ + ", " + _)
+
+     ds.collect().mkString(", ")
   }
 
   private def getWhereStatementBuilder(whereClause: Option[String]) = {

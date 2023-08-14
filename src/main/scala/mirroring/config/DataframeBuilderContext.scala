@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
-package mirroring.services.databases
+package mirroring.config
 
-case class JdbcContext(
-    private val jdbcUrl: String,
-    private val inTable: String,
-    private val inSchema: String,
-) {
-  val url: String                         = jdbcUrl
-  val table: String                       = inTable
-  val schema: String                      = inSchema
-}
+case class DataframeBuilderContext(
+    targetTableName: String,
+    writePartitioned: Boolean,
+    partitionColumns: Array[String],
+    timezone: String,
+    generateColumn: Boolean,
+    generatedColumnExp: String,
+    generatedColumnName: String,
+    generatedColumnType: String,
+    disablePlatformIngestedAt: Boolean
+)

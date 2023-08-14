@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package mirroring.builders
+package mirroring.services.builders
 
 import java.sql.{CallableStatement, Connection, ResultSet}
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
-import mirroring.builders.SqlBuilder.buildSQLObjectName
+import SqlBuilder.buildSQLObjectName
 import mirroring.services.SparkService.spark
 import scala.collection.mutable.ListBuffer
 import wvlet.log.LogSupport

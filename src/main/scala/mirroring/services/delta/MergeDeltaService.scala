@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package mirroring.services.writer
+package mirroring.services.delta
 
 import io.delta.tables.DeltaTable
-import mirroring.builders.FilterBuilder
-import org.apache.spark.sql.{DataFrame, DataFrameWriter, Row}
+import mirroring.config.{ApplicationConfig, WriterContext}
 import mirroring.services.SparkService.spark
+import mirroring.services.builders.FilterBuilder
+import org.apache.spark.sql.{DataFrame, DataFrameWriter, Row}
 import wvlet.log.LogSupport
-import mirroring.Config
 
-class MergeService(context: WriterContext) extends DeltaService(context) with LogSupport {
+class MergeDeltaService(context: WriterContext) extends DeltaService(context) with LogSupport {
 
   override def write(data: DataFrame): Unit = {
     if (DeltaTable.isDeltaTable(spark, context.path)) {
@@ -31,9 +31,9 @@ class MergeService(context: WriterContext) extends DeltaService(context) with Lo
 
       DeltaTable
         .forPath(spark, context.path)
-        .as(Config.TargetAlias)
+        .as(ApplicationConfig.TargetAlias)
         .merge(
-          data.as(Config.SourceAlias),
+          data.as(ApplicationConfig.SourceAlias),
           FilterBuilder.buildMergeCondition(
             context.mergeKeys,
             data,
@@ -51,7 +51,4 @@ class MergeService(context: WriterContext) extends DeltaService(context) with Lo
     }
   }
 
-  override def dfWriter(data: DataFrame): DataFrameWriter[Row] = {
-    super.dfWriter(data)
-  }
 }

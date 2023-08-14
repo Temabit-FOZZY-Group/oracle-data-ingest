@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package mirroring.services.writer
+package mirroring.services.delta
 
-import mirroring.builders.FilterBuilder
+import mirroring.config.WriterContext
+import mirroring.services.builders.FilterBuilder
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.{DataFrame, DataFrameWriter, Row}
 import wvlet.log.LogSupport
@@ -29,9 +30,9 @@ class DeltaService(context: WriterContext) extends LogSupport {
     logger.info(s"Saved data to ${context.path}")
   }
 
-  def dfWriter(data: DataFrame): DataFrameWriter[Row] = {
+  def dfWriter(dataFrame: DataFrame): DataFrameWriter[Row] = {
 
-    var writer = data.write
+    var writer = dataFrame.write
       .mode(context.mode)
       .format("delta")
       .option("mergeSchema", "true")
@@ -39,10 +40,11 @@ class DeltaService(context: WriterContext) extends LogSupport {
 
     val whereClause = if (StringUtils.isBlank(context.whereClause)) None else Some(context.whereClause)
     val replaceWhere = FilterBuilder.buildReplaceWherePredicate(
-      data,
+      dataFrame,
       context.lastPartitionCol,
       whereClause
     )
+
     if (context.mode == "overwrite") {
       logger.info(s"Data matching next condition will be replaced: $replaceWhere")
       replaceWhere

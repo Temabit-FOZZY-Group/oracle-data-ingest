@@ -14,16 +14,11 @@
  * limitations under the License.
  */
 
-package mirroring.builders
+package mirroring.config
 
-case class DataframeBuilderContext(
-    targetTableName: String,
-    writePartitioned: Boolean,
-    partitionColumns: Array[String],
-    timezone: String,
-    generateColumn: Boolean,
-    generatedColumnExp: String,
-    generatedColumnName: String,
-    generatedColumnType: String,
-    disablePlatformIngestedAt: Boolean
-)
+case class JdbcContext(url: String,
+                       table: String,
+                       schema: String,
+                       fetchSize: String,
+                       partitionsNumber: Int)
+

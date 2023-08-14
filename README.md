@@ -19,6 +19,8 @@ jdbcUrl==jdbc:jtds:sqlserver://server\;instance=inst\;domain=dmn\;useNTLMv2=true
 * **query**                 `optional` Custom query to the source. If used with "where" condition within query, param "where" must not be specified.
 * **where**                 `optional` Where clause to filter data, e.g. `date = '2011-02-02'`. Must be interchangeable with Spark SQL
 * **jdbcUrl**               `required` JDBC Url to the source database.
+* **fetch_size**            `optional` Number of rows to fetch from the source database. Default - 50000.
+* **partition_size**        `optional` Number of rows to write in one partition. Default - 4.
 * **mode**                  `optional` Must be set unless `useMerge` or `isChangeTrackingEnabled` is set to `true`. Default behaviour - Error is thrown if delta table exists.
 * **calc_min_dt**           `optional` Lower bound of the time range (included) e.g. '2021-10-1'.
 * **calc_max_dt**           `optional` Upper bound of the time range (excluded), e.g. '2021-10-10'.
