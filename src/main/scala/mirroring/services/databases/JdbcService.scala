@@ -37,10 +37,8 @@ class JdbcService(jdbcContext: JdbcContext) extends LogSupport {
       .option("dbtable", query)
       .option("fetchsize", jdbcContext.fetchSize)
       .load()
-      .repartition(4)
+      .repartition(jdbcContext.partitionsNumber)
       .cache()
-
-//    logger.info(s"Number of incoming rows: ${jdbcDF.count}")
 
     jdbcDF
   }
@@ -62,7 +60,7 @@ class JdbcService(jdbcContext: JdbcContext) extends LogSupport {
 
     val sourceSchema = spark.read
       .format("jdbc")
-      .option("url", getUrl())
+      .option("url", getUrl)
       .option("dbtable", sql)
       .load()
 
@@ -90,7 +88,7 @@ class JdbcService(jdbcContext: JdbcContext) extends LogSupport {
     }
   }
 
-  private def getUrl(): String = {
+  private def getUrl: String = {
     // If user/password are passed through environment variables, extract them and append to the url
     val sb = new mutable.StringBuilder(jdbcContext.url)
     if (
