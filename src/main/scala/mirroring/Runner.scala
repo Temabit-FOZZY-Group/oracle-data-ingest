@@ -17,8 +17,8 @@
 package mirroring
 
 import org.apache.spark.sql.DataFrame
-import mirroring.config.{ApplicationConfig, WriterContext}
-import mirroring.services.builders.{ConfigBuilder, DataframeBuilder, FilterBuilder}
+import mirroring.config.{ApplicationConfig, ApplicationParametersParser, WriterContext}
+import mirroring.services.builders.{DataframeBuilder, FilterBuilder}
 import mirroring.services.databases.JdbcService
 import mirroring.services.delta.{DeltaService, DeltaTableUtils, MergeDeltaService}
 import mirroring.services.{SparkService, HiveMetastoreService}
@@ -33,7 +33,7 @@ object Runner extends LogSupport {
     }
 
     //logger.info(s"Parameters parsed: ${args}")
-    val config: ApplicationConfig = ConfigBuilder.build(ConfigBuilder.parse(args))
+    val config: ApplicationConfig = ApplicationParametersParser.build(ApplicationParametersParser.parse(args))
     logger.debug(s"Parameters parsed: ${config.toString}")
     config
   }

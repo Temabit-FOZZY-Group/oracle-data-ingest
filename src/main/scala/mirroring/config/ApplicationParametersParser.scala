@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-package mirroring.services.builders
+package mirroring.config
 
-import mirroring.config.ApplicationConfig
-
-object ConfigBuilder {
+object ApplicationParametersParser {
 
   def parse(
       arguments: Array[String]
@@ -76,7 +74,7 @@ object ConfigBuilder {
       _query = arguments("query"),
       _jdbcUrl = arguments("jdbcUrl"),
       fetchSize = arguments("fetch_size"),
-      partitionsNumber = arguments("partitionsNumber").toInt,
+      partitionsNumber = arguments("partitions_number").toInt,
       mode = arguments("mode"),
       _calcMinDt = arguments("calc_min_dt"),
       _calcMaxDt = arguments("calc_max_dt"),
