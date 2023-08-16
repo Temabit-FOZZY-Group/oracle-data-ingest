@@ -55,7 +55,7 @@ class JdbcService(jdbcContext: JdbcContext) extends LogSupport {
 
   private def getCustomSchema(): String = {
     val sql =
-      s"(select column_name, data_type from INFORMATION_SCHEMA.COLUMNS with (nolock) where " +
+      s"(select column_name, data_type from INFORMATION_SCHEMA.COLUMNS where " +
         s"TABLE_NAME = '${jdbcContext.table}' and TABLE_SCHEMA = '${jdbcContext.schema}') subq"
 
     val sourceSchema = spark.read
