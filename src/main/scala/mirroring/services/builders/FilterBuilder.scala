@@ -92,7 +92,8 @@ object FilterBuilder extends LogSupport {
       val partitionColumnDS = ds
         .select(partitionCol)
         .distinct
-        .na.drop()
+        .na
+        .drop()
         .as[String](Encoders.STRING)
 
       if (!partitionColumnDS.isEmpty) {
@@ -120,7 +121,7 @@ object FilterBuilder extends LogSupport {
         }
       )(Encoders.STRING)
 
-     ds.collect().mkString(", ")
+    ds.collect().mkString(", ")
   }
 
   private def getWhereStatementBuilder(whereClause: Option[String]) = {

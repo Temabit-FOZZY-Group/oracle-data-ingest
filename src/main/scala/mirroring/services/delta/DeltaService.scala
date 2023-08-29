@@ -38,7 +38,8 @@ class DeltaService(context: WriterContext) extends LogSupport {
       .option("mergeSchema", "true")
       .option("userMetadata", context.ctCurrentVersion)
 
-    val whereClause = if (StringUtils.isBlank(context.whereClause)) None else Some(context.whereClause)
+    val whereClause =
+      if (StringUtils.isBlank(context.whereClause)) None else Some(context.whereClause)
     val replaceWhere = FilterBuilder.buildReplaceWherePredicate(
       dataFrame,
       context.lastPartitionCol,

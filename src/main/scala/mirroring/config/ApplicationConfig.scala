@@ -78,11 +78,11 @@ case class ApplicationConfig(
 
   val targetTableName: String =
     s"${FilterBuilder.buildStrWithoutSpecChars(schema).toLowerCase}__${FilterBuilder.buildStrWithoutSpecChars(tab).toLowerCase}"
-  val pathToSave: String                     = s"${_pathToSave}/$targetTableName"
-  val mergeKeys: Array[String]               = stringToArray(_mergeKeys)
-  val primary_key: Array[String]             = stringToArray(_primaryKey)
-  val zorderby_col: Array[String]            = stringToArray(_zorderbyCol)
-  val partitionCols: Array[String]           = stringToArray(_partitionCol)
+  val pathToSave: String           = s"${_pathToSave}/$targetTableName"
+  val mergeKeys: Array[String]     = stringToArray(_mergeKeys)
+  val primary_key: Array[String]   = stringToArray(_primaryKey)
+  val zorderby_col: Array[String]  = stringToArray(_zorderbyCol)
+  val partitionCols: Array[String] = stringToArray(_partitionCol)
   val lastPartitionCol: String =
     if (partitionCols.length > 0) partitionCols.last else ""
 
