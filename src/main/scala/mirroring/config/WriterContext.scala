@@ -17,15 +17,14 @@
 package mirroring.config
 
 case class WriterContext(
-     mode: String,
-     path: String,
-     partitionCols: Array[String],
-     lastPartitionCol: String,
-     mergeKeys: Array[String],
-     primaryKey: Array[String],
-     whereClause: String
+    mode: String,
+    path: String,
+    partitionCols: Array[String],
+    lastPartitionCol: String,
+    mergeKeys: Array[String],
+    primaryKey: Array[String],
+    whereClause: String
 )
-
 
 object WriterContext {
 

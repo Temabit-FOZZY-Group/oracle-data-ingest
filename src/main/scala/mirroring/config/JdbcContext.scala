@@ -16,9 +16,10 @@
 
 package mirroring.config
 
-case class JdbcContext(url: String,
-                       table: String,
-                       schema: String,
-                       fetchSize: String,
-                       partitionsNumber: Int)
-
+case class JdbcContext(
+    url: String,
+    table: String,
+    schema: String,
+    fetchSize: String,
+    partitionsNumber: Int
+)

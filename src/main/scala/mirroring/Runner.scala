@@ -33,7 +33,8 @@ object Runner extends LogSupport {
     }
 
     //logger.info(s"Parameters parsed: ${args}")
-    val config: ApplicationConfig = ApplicationParametersParser.build(ApplicationParametersParser.parse(args))
+    val config: ApplicationConfig =
+      ApplicationParametersParser.build(ApplicationParametersParser.parse(args))
     logger.debug(s"Parameters parsed: ${config.toString}")
     config
   }
@@ -71,10 +72,12 @@ object Runner extends LogSupport {
   private def deltaPostProcessing(config: ApplicationConfig, ds: DataFrame): Unit = {
     if (config.zorderby_col.nonEmpty) {
       val replaceWhere =
-        FilterBuilder.buildReplaceWherePredicate(
-          ds,
-          config.lastPartitionCol
-        ).getOrElse("1=1")
+        FilterBuilder
+          .buildReplaceWherePredicate(
+            ds,
+            config.lastPartitionCol
+          )
+          .getOrElse("1=1")
 
       DeltaTableUtils.executeZOrdering(
         config.pathToSave,

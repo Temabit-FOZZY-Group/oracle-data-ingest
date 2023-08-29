@@ -33,15 +33,15 @@ headerLicense := Some(
   )
 )
 name := "MirroringOracle"
-scalaVersion := "2.13.5"
-val sparkVersion = "3.2.3"
-version := s"1.0.1-spark$sparkVersion-scala${scalaVersion.value}"
+scalaVersion := "2.13.11"
+val sparkVersion = "3.4.1"
+version := s"1.1.0-spark$sparkVersion-scala${scalaVersion.value}"
 
 libraryDependencies ++= Seq(
   "org.apache.spark"   %% "spark-core"         % sparkVersion % "provided",
   "org.apache.spark"   %% "spark-sql"          % sparkVersion % "provided",
   "org.apache.spark"   %% "spark-hive"         % sparkVersion % "provided",
-  "io.delta"           %% "delta-core"         % "2.0.1"      % "provided",
+  "io.delta"           %% "delta-core"         % "2.2.0"      % "provided",
   "org.wvlet.airframe" %% "airframe-log"       % "22.7.3",
   "org.wvlet.airframe" %% "airframe-json"      % "22.8.0",
   "org.wvlet.airframe" %% "airframe-codec"     % "22.8.0",

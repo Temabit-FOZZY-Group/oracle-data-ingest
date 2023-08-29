@@ -50,7 +50,7 @@ class JdbcService(jdbcContext: JdbcContext) extends LogSupport {
       .option("user", sys.env.getOrElse("DB_USER", ""))
       .option("password", sys.env.getOrElse("DB_PASSWORD", ""))
       .option("driver", "oracle.jdbc.driver.OracleDriver")
-      //.option("customSchema", getCustomSchema())
+    //.option("customSchema", getCustomSchema())
   }
 
   private def getCustomSchema(): String = {
@@ -82,7 +82,7 @@ class JdbcService(jdbcContext: JdbcContext) extends LogSupport {
       customSchema
     } catch {
       case e: java.lang.UnsupportedOperationException
-        if e.getMessage.contains("empty collection") =>
+          if e.getMessage.contains("empty collection") =>
         logger.info(s"No custom schema will be used")
         ""
     }
