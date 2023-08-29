@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        scala: [ 2.12.10, 2.12.15, 2.13.5 ]
+        scala: [ 2.13.5 ]
     env:
       SCALA_VERSION: ${{ matrix.scala }}
       SPARK_LOCAL_IP: localhost
@@ -31,6 +31,7 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           fail_ci_if_error: true
+          version: "v0.1.15"
   lint:
     runs-on: ubuntu-20.04
     steps:
