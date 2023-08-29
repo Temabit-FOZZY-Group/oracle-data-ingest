@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 headerLicense := Some(
   HeaderLicense.Custom(
     """|Copyright (2021) The Delta Flow Project Authors.
@@ -49,6 +48,7 @@ libraryDependencies ++= Seq(
   "org.scalatest"      %% "scalatest-core"     % "3.2.13"     % "test",
   "org.scalatest"      %% "scalatest-funsuite" % "3.2.13"     % "test"
 )
+
 assemblyMergeStrategy in assembly := {
   case PathList("META-INF", xs @ _*) => MergeStrategy.discard
   case x                             => MergeStrategy.first
