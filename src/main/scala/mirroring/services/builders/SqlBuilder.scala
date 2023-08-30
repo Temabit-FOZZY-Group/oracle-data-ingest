@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package mirroring.builders
+package mirroring.services.builders
 
 import wvlet.log.LogSupport
 
@@ -34,7 +34,7 @@ object SqlBuilder extends LogSupport {
       table: String,
       where: String
   ): String = {
-    s"(select * from [$schema].[$table] with (nolock) where $where) subq"
+    s"(select * from [$schema].[$table] where $where) subq"
   }
 
   def buildBetween(

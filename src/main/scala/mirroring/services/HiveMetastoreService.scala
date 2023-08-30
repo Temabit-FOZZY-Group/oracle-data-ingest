@@ -17,19 +17,18 @@
 package mirroring.services
 
 import io.delta.tables.DeltaTable
-import mirroring.builders.SqlBuilder
+import mirroring.config.ApplicationConfig
 import mirroring.services.SparkService.spark
+import mirroring.services.builders.SqlBuilder
 import wvlet.log.LogSupport
-import mirroring.Config
 
-object SqlService extends LogSupport {
+object HiveMetastoreService extends LogSupport {
 
-  def run(config: Config): Unit = {
+  def run(config: ApplicationConfig): Unit = {
 
     val createDbSQL =
       SqlBuilder.buildCreateDbSQL(config.hiveDb, config.hiveDbLocation)
-    val dropTableSQL =
-      SqlBuilder.buildDropTableSQL(config.hiveDb, config.targetTableName)
+
     val createTableSQL = SqlBuilder.buildCreateTableSQL(
       config.hiveDb,
       config.targetTableName,
@@ -39,8 +38,6 @@ object SqlService extends LogSupport {
     if (DeltaTable.isDeltaTable(spark, config.pathToSave)) {
       logger.info(s"Running SQL: $createDbSQL")
       spark.sql(createDbSQL)
-      //logger.info(s"Running SQL: $dropTableSQL")
-      //spark.sql(dropTableSQL)
       logger.info(s"Running SQL: $createTableSQL")
       spark.sql(createTableSQL)
     }

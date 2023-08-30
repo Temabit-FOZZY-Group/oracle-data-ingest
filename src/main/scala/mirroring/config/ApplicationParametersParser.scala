@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-package mirroring.builders
+package mirroring.config
 
-import mirroring.Config
-
-object ConfigBuilder {
+object ApplicationParametersParser {
 
   def parse(
       arguments: Array[String]
@@ -30,6 +28,8 @@ object ConfigBuilder {
       "where"                        -> "",
       "query"                        -> "",
       "jdbcUrl"                      -> "",
+      "fetch_size"                   -> "50000",
+      "partitions_number"            -> "4",
       "mode"                         -> "errorifexists",
       "calc_min_dt"                  -> "",
       "calc_max_dt"                  -> "",
@@ -45,7 +45,7 @@ object ConfigBuilder {
       "generated_column_name"        -> "",
       "generated_column_exp"         -> "",
       "generated_column_type"        -> "",
-      "timezone"                     -> Config.Timezone,
+      "timezone"                     -> ApplicationConfig.Timezone,
       "force_partition"              -> "false",
       "change_tracking"              -> "false",
       "primary_key"                  -> "",
@@ -65,14 +65,16 @@ object ConfigBuilder {
     mapArgs
   }
 
-  def build(arguments: scala.collection.mutable.Map[String, String]): Config = {
-    Config(
+  def build(arguments: scala.collection.mutable.Map[String, String]): ApplicationConfig = {
+    ApplicationConfig(
       _pathToSave = arguments("path_to_save"),
       tab = arguments("tab"),
       schema = arguments("schema"),
       _whereClause = arguments("where"),
       _query = arguments("query"),
       _jdbcUrl = arguments("jdbcUrl"),
+      fetchSize = arguments("fetch_size"),
+      partitionsNumber = arguments("partitions_number").toInt,
       mode = arguments("mode"),
       _calcMinDt = arguments("calc_min_dt"),
       _calcMaxDt = arguments("calc_max_dt"),

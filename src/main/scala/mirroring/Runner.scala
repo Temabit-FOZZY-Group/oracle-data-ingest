@@ -17,27 +17,29 @@
 package mirroring
 
 import org.apache.spark.sql.DataFrame
-import mirroring.builders.{ConfigBuilder, DataframeBuilder, FilterBuilder}
-import mirroring.services.databases.{JdbcService}
-import mirroring.services.writer.{MergeService, DeltaService, WriterContext}
-import mirroring.services.{SparkService, SqlService, DeltaTableService}
+import mirroring.config.{ApplicationConfig, ApplicationParametersParser, WriterContext}
+import mirroring.services.builders.{DataframeBuilder, FilterBuilder}
+import mirroring.services.databases.JdbcService
+import mirroring.services.delta.{DeltaService, DeltaTableUtils, MergeDeltaService}
+import mirroring.services.{SparkService, HiveMetastoreService}
 import wvlet.log.LogSupport
 
 object Runner extends LogSupport {
 
-  def initConfig(args: Array[String]): Config = {
+  def initConfig(args: Array[String]): ApplicationConfig = {
 
-    for ( x <- args ) {
-         logger.info(s"Parameter: ${x}")
+    for (x <- args) {
+      logger.info(s"Parameter: $x")
     }
 
     //logger.info(s"Parameters parsed: ${args}")
-    val config: Config = ConfigBuilder.build(ConfigBuilder.parse(args))
+    val config: ApplicationConfig =
+      ApplicationParametersParser.build(ApplicationParametersParser.parse(args))
     logger.debug(s"Parameters parsed: ${config.toString}")
     config
   }
 
-  def setSparkContext(config: Config): Unit = {
+  def setSparkContext(config: ApplicationConfig): Unit = {
     val spark = SparkService.spark
     logger.info(
       s"""Creating spark session with configurations: ${spark.conf.getAll
@@ -49,40 +51,43 @@ object Runner extends LogSupport {
 
   def main(args: Array[String]): Unit = {
     logger.info("Starting mirroring-lib...")
-    val config: Config = initConfig(args)
+    val config: ApplicationConfig = initConfig(args)
     setSparkContext(config)
-    val jdbcContext                                  = config.getJdbcContext
-    val writerContext: WriterContext                 = config.getWriterContext
-    var query: String                                = config.query
+    val jdbcContext                  = config.getJdbcContext
+    val writerContext: WriterContext = config.getWriterContext
+    val query: String                = config.query
 
-    var jdbcService: JdbcService = new JdbcService(jdbcContext)
+    val jdbcService: JdbcService = new JdbcService(jdbcContext)
 
     val jdbcDF: DataFrame = jdbcService.loadData(query)
-    val ds                = DataframeBuilder.buildDataFrame(jdbcDF, config.getDataframeBuilderContext).cache()
+    val ds                = DataframeBuilder.buildDataFrame(jdbcDF, config.getDataframeBuilderContext)
     jdbcDF.unpersist()
+    ds.cache()
 
-    var writerService: DeltaService = new DeltaService(writerContext)
+    val writerService: DeltaService = new DeltaService(writerContext)
     writerService.write(data = ds)
     deltaPostProcessing(config, ds)
   }
 
-  def deltaPostProcessing(config: Config, ds: DataFrame): Unit = {
+  private def deltaPostProcessing(config: ApplicationConfig, ds: DataFrame): Unit = {
     if (config.zorderby_col.nonEmpty) {
       val replaceWhere =
-        FilterBuilder.buildReplaceWherePredicate(
-          ds,
-          config.lastPartitionCol,
-          ""
-        )
-      DeltaTableService.executeZOrdering(
+        FilterBuilder
+          .buildReplaceWherePredicate(
+            ds,
+            config.lastPartitionCol
+          )
+          .getOrElse("1=1")
+
+      DeltaTableUtils.executeZOrdering(
         config.pathToSave,
         config.zorderby_col,
         replaceWhere
       )
     }
-    DeltaTableService.runVacuum(config.pathToSave)
+    DeltaTableUtils.runVacuum(config.pathToSave)
     if (config.hiveDb.nonEmpty) {
-      SqlService.run(config)
+      HiveMetastoreService.run(config)
     }
   }
 }

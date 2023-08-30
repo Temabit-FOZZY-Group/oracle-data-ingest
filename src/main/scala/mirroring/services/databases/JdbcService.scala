@@ -18,6 +18,7 @@ package mirroring.services.databases
 
 import org.apache.spark.sql.{DataFrame, DataFrameReader, Encoders}
 import mirroring.DatatypeMapping
+import mirroring.config.JdbcContext
 import mirroring.services.SparkService.spark
 import wvlet.log.LogSupport
 
@@ -25,38 +26,43 @@ import scala.collection.mutable
 
 class JdbcService(jdbcContext: JdbcContext) extends LogSupport {
 
-  val db_user: String     = sys.env.getOrElse("DB_USER", "")
-  val db_password: String = sys.env.getOrElse("DB_PASSWORD", "")
+  private val db_user: String     = sys.env.getOrElse("DB_USER", "")
+  private val db_password: String = sys.env.getOrElse("DB_PASSWORD", "")
 
-  lazy val url: String = {
-    // If user/password are passed through environment variables, extract them and append to the url
-    val sb = new mutable.StringBuilder(jdbcContext.url)
-    if (
-      !jdbcContext.url.contains("user") && !jdbcContext.url.contains(
-        "password"
-      ) && db_user.nonEmpty && db_password.nonEmpty
-    ) {
-      if (!jdbcContext.url.endsWith(";")) {
-        sb.append(";")
-      }
-      sb.append(s"user=$db_user;password=$db_password")
-    }
+  def loadData(query: String): DataFrame = {
+    logger.info(s"Reading data with url: ${jdbcContext.url}")
+    logger.info(s"Reading data with query: $query")
 
-    require(
-      sb.toString.contains("password="),
-      "Parameters user and password are required for jdbc connection."
-    )
+    val jdbcDF = getSparkReader
+      .option("dbtable", query)
+      .option("fetchsize", jdbcContext.fetchSize)
+      .load()
+      .repartition(jdbcContext.partitionsNumber)
+      .cache()
 
-    sb.toString
+    jdbcDF
   }
 
-  protected lazy val customSchema: String = {
+  private def getSparkReader: DataFrameReader = {
+    spark.read
+      .format("jdbc")
+      .option("url", jdbcContext.url)
+      .option("user", sys.env.getOrElse("DB_USER", ""))
+      .option("password", sys.env.getOrElse("DB_PASSWORD", ""))
+      .option("driver", "oracle.jdbc.driver.OracleDriver")
+    //.option("customSchema", getCustomSchema())
+  }
+
+  private def getCustomSchema(): String = {
     val sql =
-      s"(select column_name, data_type from INFORMATION_SCHEMA.COLUMNS with (nolock) where " +
+      s"(select column_name, data_type from INFORMATION_SCHEMA.COLUMNS where " +
         s"TABLE_NAME = '${jdbcContext.table}' and TABLE_SCHEMA = '${jdbcContext.schema}') subq"
 
-    val sourceSchema =
-      spark.read.format("jdbc").option("url", url).option("dbtable", sql).load()
+    val sourceSchema = spark.read
+      .format("jdbc")
+      .option("url", getUrl)
+      .option("dbtable", sql)
+      .load()
 
     // create custom schema to avoid transferring DATE as STRING
     // viz https://jtds.sourceforge.net/typemap.html
@@ -82,22 +88,26 @@ class JdbcService(jdbcContext: JdbcContext) extends LogSupport {
     }
   }
 
+  private def getUrl: String = {
+    // If user/password are passed through environment variables, extract them and append to the url
+    val sb = new mutable.StringBuilder(jdbcContext.url)
+    if (
+      !jdbcContext.url.contains("user") && !jdbcContext.url.contains(
+        "password"
+      ) && db_user.nonEmpty && db_password.nonEmpty
+    ) {
+      if (!jdbcContext.url.endsWith(";")) {
+        sb.append(";")
+      }
+      sb.append(s"user=$db_user;password=$db_password")
+    }
 
-  def loadData(_query: String): DataFrame = {
-    logger.info(s"Reading data with url: ${jdbcContext.url}")
-    logger.info(s"Reading data with query: ${_query}")
-    val jdbcDF = dfReader.option("dbtable", _query).load().cache()
-    logger.info(s"Number of incoming rows: ${jdbcDF.count}")
-    jdbcDF
+    require(
+      sb.toString.contains("password="),
+      "Parameters user and password are required for jdbc connection."
+    )
+
+    sb.toString
   }
 
-  def dfReader: DataFrameReader = {
-    spark.read
-      .format("jdbc")
-      .option("url", jdbcContext.url)
-      .option("user", sys.env.getOrElse("DB_USER", ""))
-      .option("password", sys.env.getOrElse("DB_PASSWORD", ""))
-      .option("driver", "oracle.jdbc.driver.OracleDriver")
-      //.option("customSchema", customSchema)
-  }
 }

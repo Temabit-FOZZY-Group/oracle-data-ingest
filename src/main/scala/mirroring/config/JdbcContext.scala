@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package mirroring.services.databases
+package mirroring.config
 
 case class JdbcContext(
-    private val jdbcUrl: String,
-    private val inTable: String,
-    private val inSchema: String,
-) {
-  val url: String                         = jdbcUrl
-  val table: String                       = inTable
-  val schema: String                      = inSchema
-}
+    url: String,
+    table: String,
+    schema: String,
+    fetchSize: String,
+    partitionsNumber: Int
+)

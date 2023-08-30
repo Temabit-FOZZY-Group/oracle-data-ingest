@@ -14,30 +14,31 @@
  * limitations under the License.
  */
 
-package mirroring
+package mirroring.config
 
-import mirroring.builders.{DataframeBuilderContext, FilterBuilder, SqlBuilder}
-import mirroring.services.databases.JdbcContext
-import mirroring.services.writer.WriterContext
+import mirroring.FlowLogger
+import mirroring.services.builders.{FilterBuilder, SqlBuilder}
 import wvlet.log.LogSupport
 
 import java.time.LocalDate
 import scala.collection.mutable
 
-object Config {
+object ApplicationConfig {
   val SparkTimestampTypeCheck: String = "TimestampType"
   val TargetAlias: String             = "target"
   val SourceAlias: String             = "source"
   val Timezone: String                = "Europe/Kiev"
 }
 
-case class Config(
+case class ApplicationConfig(
     private val _pathToSave: String,
     schema: String,
     tab: String,
     private val _whereClause: String,
     private val _query: String,
     private val _jdbcUrl: String,
+    fetchSize: String,
+    partitionsNumber: Int,
     var mode: String,
     private val _calcMinDt: String,
     private val _calcMaxDt: String,
@@ -77,11 +78,11 @@ case class Config(
 
   val targetTableName: String =
     s"${FilterBuilder.buildStrWithoutSpecChars(schema).toLowerCase}__${FilterBuilder.buildStrWithoutSpecChars(tab).toLowerCase}"
-  val pathToSave: String                     = s"${_pathToSave}/$targetTableName"
-  val mergeKeys: Array[String]               = stringToArray(_mergeKeys)
-  val primary_key: Array[String]             = stringToArray(_primaryKey)
-  val zorderby_col: Array[String]            = stringToArray(_zorderbyCol)
-  val partitionCols: Array[String]           = stringToArray(_partitionCol)
+  val pathToSave: String           = s"${_pathToSave}/$targetTableName"
+  val mergeKeys: Array[String]     = stringToArray(_mergeKeys)
+  val primary_key: Array[String]   = stringToArray(_primaryKey)
+  val zorderby_col: Array[String]  = stringToArray(_zorderbyCol)
+  val partitionCols: Array[String] = stringToArray(_partitionCol)
   val lastPartitionCol: String =
     if (partitionCols.length > 0) partitionCols.last else ""
 
@@ -168,9 +169,11 @@ case class Config(
 
   def getJdbcContext: JdbcContext = {
     JdbcContext(
-      jdbcUrl = _jdbcUrl,
-      inTable = tab,
-      inSchema = schema
+      url = _jdbcUrl,
+      table = tab,
+      schema = schema,
+      fetchSize = fetchSize,
+      partitionsNumber = partitionsNumber
     )
   }
 
@@ -194,6 +197,8 @@ case class Config(
        |where - $whereClause,
        |query - $query,
        |mode - $mode,
+       |fetch_size - $fetchSize,
+       |partitions_number - $partitionsNumber,
        |calc_min_dt - $minDate,
        |calc_max_dt - $maxDate,
        |dtflt - $dtFlt,

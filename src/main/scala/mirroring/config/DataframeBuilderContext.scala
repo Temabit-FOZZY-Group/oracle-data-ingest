@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package mirroring.builders
+package mirroring.config
 
 case class DataframeBuilderContext(
     targetTableName: String,

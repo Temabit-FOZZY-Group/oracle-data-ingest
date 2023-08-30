@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package mirroring.services.writer
+package mirroring.services.delta
 
-import mirroring.builders.FilterBuilder
+import mirroring.config.WriterContext
+import mirroring.services.builders.FilterBuilder
+import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.{DataFrame, DataFrameWriter, Row}
 import wvlet.log.LogSupport
 
@@ -28,25 +30,30 @@ class DeltaService(context: WriterContext) extends LogSupport {
     logger.info(s"Saved data to ${context.path}")
   }
 
-  def dfWriter(data: DataFrame): DataFrameWriter[Row] = {
-    var writer = data.write
+  def dfWriter(dataFrame: DataFrame): DataFrameWriter[Row] = {
+
+    var writer = dataFrame.write
       .mode(context.mode)
       .format("delta")
       .option("mergeSchema", "true")
       .option("userMetadata", context.ctCurrentVersion)
 
+    val whereClause =
+      if (StringUtils.isBlank(context.whereClause)) None else Some(context.whereClause)
     val replaceWhere = FilterBuilder.buildReplaceWherePredicate(
-      data,
+      dataFrame,
       context.lastPartitionCol,
-      context.whereClause
+      whereClause
     )
-    if (replaceWhere.nonEmpty && context.mode == "overwrite") {
-      logger.info(
-        s"Data matching next condition will be replaced: $replaceWhere"
-      )
-      writer = writer
-        .option("replaceWhere", replaceWhere)
+
+    if (context.mode == "overwrite") {
+      logger.info(s"Data matching next condition will be replaced: $replaceWhere")
+      replaceWhere
+        .foreach { where =>
+          writer = writer.option("replaceWhere", where)
+        }
     }
+
     if (context.partitionCols.nonEmpty) {
       logger.info("Saving data with partition")
       writer = writer

@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package mirroring.services
+package mirroring.services.delta
 
 import io.delta.tables.DeltaTable
 import mirroring.services.SparkService.spark
 import wvlet.log.LogSupport
 
-object DeltaTableService extends LogSupport {
+object DeltaTableUtils extends LogSupport {
 
   def runVacuum(pathToSave: String): Unit = {
     if (DeltaTable.isDeltaTable(spark, pathToSave)) {
